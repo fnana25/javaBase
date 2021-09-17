@@ -1,0 +1,31 @@
+基础：
+    数据结构与算法、设计模式
+语法：
+    集合、并发、nio、注解、反射
+jvm:
+    类加载机制、class/对象结构、垃圾处理器、编译原理、字节码
+框架：
+    spring、Springboot、spring could
+db相关框架:
+    mybatis、jpa、hibernate、数据源（Druid、Hikari）、数据库中间件（mycat、shardingjdbc）
+网络框架：
+    netty、minna、rpc(dubbo、grpc)、序列化技术
+数据库：
+    mysql、sql优化、执行原理
+其他数据库：
+    时间序列数据库、分布式数据库、mongoDB、ES、redis、TiDB
+消息中间件：
+    kafka、rabbitMQ、RokcetMQ
+分布式相关：
+    限流算法、一致性算法、分布式架构、分布式任务调度
+安全相关：
+    授权、加密
+
+开发工具：
+    maven、idea、git、Linux、docker、浏览器开发者模式
+
+其他：
+    操作系统、nginx、网络协议、shell、其他语言、前端技术、ServiceMesh、Istio
+
+
+

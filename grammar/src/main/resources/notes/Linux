@@ -1,0 +1,130 @@
+Linux常见目录说明：
+/bin 存放二进制可执行文件（ls、cat、mkdir等）,常用命令一般都在这里；
+/etc 存放系统管理和配置文件；
+/home 存放所有用户文件的根目录，是用户主目录的基点，比如用户user的主目录就是/home/user,可以用~user表示；
+/usr 存放系统应用程序;
+/opt 额外安装的可选应用程序包所放置的位置。一般情况下，可以把tomcat等都安装到这里;
+/proc 虚拟文件系统目录，是系统内存的映射。可直接访问这个目录来获取系统信息；
+/root 超级用户（系统管理员）的主目录
+/sbin 存放二进制可执行文件，只有root才能访问。这里存放的是系统管理员使用的系统级别的管理命令和程序。如ifconfig等；
+/dev  存放设备文件；
+/mnt 系统管理员安装临时文件系统的安装点，系统提供这个目录是让用户临时挂载其他的文件系统；
+/boot 存放用于系统引导时使用的各种文件；
+/lib 存放和系统运行相关的库文件；
+/tmp 用于存放各种临时文件，是共用的临时文件存储点；
+/var 用于存放运行时需要改变数据的文件，也是某些大文件的溢出区，比方说各种服务的日志文件（系统启动日志等）
+
+
+常用命令：
+一：文件命令
+修改目录名称：mv 目录名称 新目录名称
+移动目录的位置（剪切/改）: mv 目录名称 新目录位置
+拷贝目录（改）: cp -r 目录名称  拷贝的目标位置  （-r代表递归拷贝）
+删除目录（删）: rm [-rf] 目录/文件
+
+创建文件（增）：touch 文件名称
+查看文件：cat/more/less/tail 文件名称
+    cat: 查看显示文件内容
+    more: 可以显示百分比，回车可以显示下一行，空格可以显示下一页，q可以退出查看
+    less: 可以使用键盘上的上下页键翻页，q退出查看
+    tail -10: 查看文件的后10行，Ctrl+C结束
+    tail -f 文件：可以对某个文件进行动态监控
+打包文件：tar -zcvf test.tar.gz aaa.txt bbb.txt ccc.txt（打包aaa.txt、bbb.txt和ccc.txt） 或 tar test.tar.gz /test/ （打包test目录下的所有文件）
+解压文件到指定目录：tar -xvf test.tar.gz -C 目录
+文件搜索：find/locate
+    按文件名称搜索：find 路径 -name 'a*'
+    按文件大小搜索：find 路径 -size -6
+    按文件所有者搜索:find 路径 -user -user1
+    按修改时间搜索：find 路径 -mmin -5 (查找5分钟内修改过的文件)
+    按文件类型搜索（文件类型包括普通文件(f)、文件目录(d)、软连接(l)）: find 目录 -type -f/find 目录 -type -d/find 目录 -type -l
+同时满足多个条件：find 目录 -name 'a*' -a -type -f (-a表示and -o表示or)
+locate比find快一点因为locate是按照索引搜索的，把所有文件建立一个索引库，locate命令后面不带路径
+
+grep:
+grep -n test aa.txt (查找aa.txt文件中包含“test”的行，-n显示行号)
+ls -lh | grep aa.txt (把ls -lh的输出当做grep的入参查询)
+
+文件权限：
+d rwx rwx rwx =777
+d：表示文件的操作权限
+第一个rwx：表示文件拥有者的操作权限
+第二个rwx：表示文件所有者所在用户组的操作权限
+第三个rwx:表示其他用户的操作权限
+
+二、用户管理
+sudo 不用启用root用户就能执行root权限的命令
+添加用户：sudo useradd user1
+查看是否添加成功：cat /etc/passwd  (看最后一行是否有新加的用户)
+设置用户登录密码：sudo passwd user1
+切换用户：su root,切换普通用户：su user1
+退出当前用户：exit或（Ctrl+d）,退出后自动切换到上次登录的用户
+回到用户的家目录：su - user1
+删除用户：userdel user1  (userdel -r user1用户家目录一并删除；userdel -f user1 该用户正在登录也强制删除)
+
+用户组：
+添加用户组：groupadd group1  (查看是否添加成功:cat /etc/group)
+修改用户组名称：groupmd -n newname group1
+id命令（查看当前用户的uid,gid,groups）
+查看指定用户id：id user1
+查看文件id(所有文件都有id):ls -i
+
+Shell编程就是对一堆Linux命令的逻辑化处理
+shell文件创建之后，要设置文件为可执行文件   chmod  +x helloworld.sh
+
+shell 编程中一般分为三种变量：
+    自定义变量：仅在当前shell实例中有效，其他shell启动的程序不能访问局部变量；
+    Linux已定义的环境变量（如$PATH、$HOME等，这类变量我们可以直接使用），使用env命令可以查看所有的环境变量，或者set命令设置或显示 shell 变量的值
+    shell变量：由shell程序设置的特殊变量，shell变量中有一部分是环境变量，有一部分是局部变量，这些变量保证了shell程序正常运行
+
+判断语句：通常小括号用于计算，中括号用于判断
+#!/bin/sh
+NUM = 10
+if(($NUM > 4)) ; then
+    echo ""
+fi
+判断文件是否存在：
+#!/bin/sh
+if [-d /data/20200523] : then
+    mkdir -p /data/20200523
+else
+    echo "exist"
+fi
+
+追加字符串到文件末尾：
+echo  "ok" >> /temp/text.txt   “>>”表示追加到文件末尾，“>”表示覆盖文件内容为“ok”
+
+逻辑运算符解析：
+-f  判断文件是否存在
+-d  判断目录是否存在
+-eq 等于
+-ne 不等于
+-lt 小于
+...
+
+
+生产环境cpu占用过高的诊断思路：
+ 常用命令：
+    top：查看cpu和内存占用高的进程
+    vmstat -n：查看cpu使用；主要看运行和等待cpu时间片的进程数，进程消耗cpu的时间比；
+    ps -ef|grep java
+    free -m：查看系统内存
+    iostat：查看磁盘io
+    ifstat： 查看网络io
+步骤：
+    1.用top命令查看占用cpu高的进程
+    2.使用ps -ef或jps进一步定位是哪个线程
+    3.定位到具体的代码或线程：用ps -mp 进程id -o THREAD,tid,time命令
+    4.定位到具体线程的代码，使用命令：jstack 进程id|grep tid -A60; (tid为16进制线程id编号，-A60表示查看前60行代码)
+
+
+
+
+
+
+
+
+
+
+
+
+

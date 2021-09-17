@@ -1,0 +1,23 @@
+重写与重载：
+重写：  方法返回值，方法名，方法参数一样  分别定义在父类与子类中
+重载：  方法名方法参数一样  定义在同一个类  重载决定不了多态
+多态：  父类引用可以指向子类对象
+
+序列化：
+只能序列化对象的成员变量，不能序列化静态变量和方法；
+如果对象成员是对象，也可以被序列化；
+如果一个对象包含了一个不可序列化的对象则会抛出异常，可以用transient关键字修饰改引用，则不会抛出异常；
+如果一个类可以序列化，它的所有子类都可以序列化
+
+内部类：内部类共分为4种
+静态内部类：只能访问外部类的静态成员变量与静态方法，OuterClass.InnerClass  inner = new OuterClass.InnerClass()
+成员内部类：可以访问外部类的静态与非静态成员与方法，OuterClass.InnerClass  inner = new OuterClass.new InnerClass(),
+在成员内部类中访问外部类的成员变量，语法为：OuterClass.this.a
+局部内部类（方法中）：
+像局部变量一样不能定义为public,protected,private和static;
+只能访问final修饰的局部变量
+匿名内部类：会隐式地继承一个父类或实现一个接口
+
+
+泛型：https://www.cnblogs.com/coprince/p/8603492.html
+

@@ -1,0 +1,28 @@
+BossGroup:处理tcp连接
+WorkGroup:处理请求
+ 基于netty创建rpc服务：
+ Channel、Handler、ChannelHandlerContext、ChannelPipeline的关系：
+ 一个Channel就是一个connection,一个Channel会创建唯一一个ChannelPipeline，一个ChannelPipeline由多个Handler组成（可以理解为责任链模式），
+ ChannelHandlerContext是一个。。
+ 一个Channel注册到一个EventLoop,一个EventLoop相当于一个线程，一个EventLoop可以调度多个Channel，多个EventLoop注册到一个EventGroup上。
+
+EventLoop是串行执行io与业务操作的，如果一个业务操作阻塞了，会影响其他Channel的读写操作，所以通常会引入多线程将io操作与业务操作隔离。
+    1.可以在channelRead0()方法内部创建线程池，把业务处理放入线程池处理。
+    2.使用netty提供的方法，添加handler时传入EventExecutorGroup参数，ChannelPipeline会从EventExecutorGroup分配一个EventExecutor给这个handler。
+consumer启动时与server建立长连接通道，不是访问时建立
+参考：https://time.geekbang.org/dailylesson/detail/100028472?utm_source=geektime&utm_medium=chaping&utm_term=pc_interstitial
+
+IOT百万长连接性能调优：
+    1.操作系统参数调优
+        a.文件描述符：设置文件最大句柄数；设置单进程打开的最大句柄数
+        b.tcp相关参数
+    2.netty性能调优
+        a.设置合理的线程数
+            boss线程池优化：监听多个端口，才有主从reactor线程模型
+            worker线程池优化：可以先采用系统默认值（cpu内核数*2）进行性能测试，在性能测试过程中采集io线程的CPU占用大小，看是否存在瓶颈
+        b.心跳检测优化：防止无效的连接占用资源
+        c.合理使用内存池：网络io读写采用堆外直接内存，由于堆外内存使用成本较高，因此采用内存池的方式，不用每次去申请和释放内存，不涉及io操作的可以使用堆内存。
+        d.io线程和业务线程分离：如果不做复杂的业务逻辑，可以通过调大工作线程池的方式，让io操作和业务操作在一个线程内完成；如果业务操作比较复杂，则使io
+            线程与业务线程分离，io线程由于不存在锁竞争，可以创建一个大的NioEventLoopGroup线程池，业务线程则创建多个小的线程池，线程池可以和io线程绑定，
+        e.接入端设备的流控：通过增加Handler在tcp连接建立时判断接入设备是否达到了阈值，达到则拒绝建立连接
+    3.jvm调优

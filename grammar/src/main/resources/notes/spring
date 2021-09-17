@@ -1,0 +1,214 @@
+
+spring是一个轻量级的控制反转(IOC)和面向切面(AOP)的容器框架
+spring特点：
+1):方便解耦，简化开发
+2):AOP编程的支持
+3):集成各种优秀框架
+4):提供了很多辅助类
+5):提供了事务管理、消息服务、异常处理等机制
+
+主要模块：bean、context、core、aop、mvc、dao、orm、web
+ioc:由spring来负责控制对象的生命周期和对象间的关系，即spring帮对象找相应的依赖对象并注入，而不是由对象主动去找；
+    spring容器实际就是ConcurrentHashMap缓存的单例bean
+ 好处：对象与对象之间松散耦合（对象的构造方法修改后也不用修改与之关联的对象），利于功能复用，程序的整个体系结构变得非常灵活；
+      资源变得容易管理；（例如利用spring很容易实现一个单例）
+DI:组件之间的依赖关系由容器在运行期决定，由容器动态的将某个依赖关系注入到组件中
+   注入方式：属性注入、构造方法、工厂方法
+   构造方法的优点：
+        保证重要属性预先设置；
+        无需提供每个属性的setter方法，减少类的方法个数；
+        可以更好的封装类变量，避免外部错误调用
+   属性注入的优点：
+       属性较多时，构造方法显得臃肿；
+       构造函数注入灵活性不强，有时需要为属性注入null值；
+       多个构造函数时，配置上产生歧义，复杂度升高；
+       构造函数不利于类的继承和扩展；
+       构造函数注入会引起循环依赖的问题
+AOP：
+    面向对象的特点是继承、多态和封装。而封装就要求将功能分散到不同的对象中去，降低了代码的复杂度，使类可重用；
+    AOP是程序在运行时，动态地将代码切入到类的指定方法、指定位置上的编程思想就是面向切面编程
+    spring aop同时支持cglib、aspectj、jdk动态代理，如果类实现了接口就用jdk动态代理，否则就用cglib代理
+    aspectj在aop的实现方式上依赖于特殊编译器（ajc编译器），属于动态编译，字节码织入
+    spring只是使用了AspectJ 5 一样的注解，但仍然没有使用aspectj的编译器，底层依然是动态代理技术的实现。
+
+mvc:
+   好处：降低耦合性，提高重用性
+
+BeanFactory与ApplicationContext
+BeanFactory：
+    1)是spring里面最底层的接口，提供了最简单的容器的功能，只提供了实例化对象和拿对象的功能；
+    2)容器启动的时候不会去实例化bean，只有从容器中拿bean的时候才回去实例化；
+    3)应用启动的时候占用资源较少，对资源要求高的应用比较有优势。
+ApplicationContext：
+    1)应用上下文，继承BeanFactory接口，它是spring的另一个高级的容器，提供了更多的有用的功能；
+    2)启动的时候实例化所有的bean(也可以通过配置，延迟实例化)；
+ ==启动时实例化的优点：
+    1)系统的运行速度快
+    2)在系统启动的时候就能发现配置的问题
+建议：web应用在系统启动的时候加载bean，把费时的事情放到启动，提高运行速度
+
+ApplicationContext的三个实现类：
+    ClassPathXmlApplication:从类路径载入xml文件载入上下文定义信息
+    FileSystemXmlApplication:从文件系统中xml文件载入上下文定义信息
+    XmlWebApplicationContext:从web系统中的xml文件载入上下文定义信息
+
+AOP实现源码解析：
+    通过@EnableAspectJAutoProxy注解为容器导入了一个AspectJAutoProxyRegister类，这个类继承了BeanPostProcessors,
+    当目标类初始化完成后会调用AspectJAutoProxyRegister类的后置处理方法对目标类进行包装，生成代理时会到容器中取切面信息，
+    切面信息是在第一个单例bean实例化之前解析然后存入缓存中的，事务切面没有存到缓存，aop切面存到了缓存，因为事务切面比较少，这样做是为性能考虑。
+文档参考：https://blog.csdn.net/bandeo/category_9705459.html
+         https://blog.csdn.net/java_lyvee/category_7351027.html
+         https://www.bilibili.com/video/BV1Xt411g7eZ?p=1
+
+spring事务：
+    spring事务的三大接口：PlatformTransactionManager  事务管理器；TransactionDefinition  事务定义信息；TransactionStatus  事务运行状态
+    spring并不直接管理事务，而是让相关平台自己实现，运用了模板方法模式，PlatformTransactionManager提供了获取事务、提交事务和回滚事务3个方法
+    @EnableTransactionManagement声明在主配置类上，表示开启声明式事务，其原理是通过@Import导入TransactionManagementConfigurationSelector组件，
+    然后又通过TransactionManagementConfigurationSelector导入组件AutoProxyRegistrar和ProxyTransactionManagementConfiguration。
+    AutoProxyRegistrar的作用跟aop中的AnnotationAwareAspectJAutoProxyCreator是一样的，利用后置处理器机制，在对象创建后，包装对象，
+    返回一个代理对象（增强器），代理对象执行方法利用拦截器链进行调用；InfrastructureAdvisorAutoProxyCreator继承SmartInstantiationAwareBeanPostProcessor，
+    通过@Transactional作为方法拦截的标记，把有事务管理的类作为目标类，生成代理对象，然后增强@Transactional标记的方法
+spring事务实现方式：
+    1)编程式事务，通过java.sql.Connection
+    2)基于TransactionProxyFactoryBean的声明式事务管理
+    3)@Transactional
+    4)基于aspectj的aop事务
+
+SpringMvc的工作流程描述：
+    1)客户端（浏览器）发送请求，直接请求到 DispatcherServlet。
+    2)DispatcherServlet 根据请求信息调用 HandlerMapping，解析请求对应的 Handler。
+    3)解析到对应的 Handler（也就是我们平常说的 Controller 控制器）后，开始由 HandlerAdapter 适配器处理。
+    4)HandlerAdapter 会根据 Handler 来调用真正的处理器来处理请求，并处理相应的业务逻辑。
+    5)处理器处理完业务后，会返回一个 ModelAndView 对象，Model 是返回的数据对象，View 是个逻辑上的 View。
+    6)ViewResolver 会根据逻辑 View 查找实际的 View。
+    7)DispaterServlet 把返回的 Model 传给 View（视图渲染）。
+    8)把 View 返回给请求者（浏览器）
+
+spring部分源码分析：容器启动，bean生命周期，循环依赖，aop，事务
+    循环依赖：spring三级缓存解决循环依赖
+    singletonObjects:第一级缓存，里面放的是初始化好的单例对象
+    earlySingletonObjects:第二级缓存，里面放的是实例化完成但是还没初始化，提前曝光的单例对象
+    singletonFactories:第三级缓存，里面存放的是要被实例化的对象的对象工厂
+注：构造方法注入不能解决循环依赖的问题，因为实例化需要调用构造方法来完成。
+    所以当一个Bean调用构造函数进行实例化后，即使属性还未填充，
+    就可以通过三级缓存向外暴露依赖的引用值（所以循环依赖问题的解决也是基于Java的引用传递），这也说明了另外一点，基于构造函数的注入，如果有循环依赖，
+    spring是不能解决的。还要说明一点，spring默认的bean scope是单例的，而三级缓存中都包含singleton，可见是对于单例bean之间的循环依赖，spring是通过三级缓存来解决的。
+
+
+
+    手动模式
+        xml资源配置   <constructor-arg/>
+        Java注解配置    @Bean
+        api配置元信息    BeanDefinition
+    自动模式
+        constructor
+字段注入（只有手动模式，没有自动模式）：
+        @Autowired
+        @Resource
+        @Inject
+注： @Autowired和@Resource都是byType的，且是单例的，@Autowired不支持静态字段注入
+方法注入（只有手动模式，没有自动模式）：
+         @Autowired
+         @Resource
+         @Inject
+         @Bean
+接口回调注入：
+         Aware系列接口
+
+九、spring bean的生命周期
+BeanFactory的默认实现为DefaultListableBeanFactory,其中bean的生命周期和方法如下：
+    1)BeanDefinition 注册阶段  --registerBeanDefinition
+    2)BeanDefinition 合并阶段  --getMergedBeanDefinition
+    3)Bean实例化前阶段    --resolveBeforeInstantiation
+    4)Bean实例化阶段    --createBeanInstance
+    5)Bean实例化后阶段    --populateBean
+    6)Aware 接口回调阶段    --initializeBean
+    7)Bean初始化前阶段    --initializeBean
+    8)Bean初始化阶段    --initializeBean
+    9)Bean初始化后阶段    --initializeBean
+    10)Bean初始化完成阶段    --preInstantiateSingletons
+    11)Bean销毁阶段    --destroyBean
+    12)Bean销毁阶段    --destroyBean
+
+备注：BeanPostProcessor提供spring bean 初始化前和初始化后生命周期回调，分别对应postProcessBeforeInitialization 以及postProcessAfterInitialization方法
+
+spring 注解总结：
+    1)创建/注入bean类：@Component、@Controller、@Service、@Repository、@Bean、
+                      @Import、@Autowired、@Inject、@Resource、@Qualifier
+    2)配置类：@Configuration、@Bean、@ComponentScan、@Value、@Profile、@PropertySource、@Import、@ImportSource
+    3)aop类：@Aspect、@PointCut、@After、@Before、@Around
+    4)Bean属性相关：@Scope、@Lazy、@Primary、@Order、@DependsOn
+    5)Enable*类：异步EnableAsync(@Async)、定时任务EnableScheduling(@Scheduled)、AOP@EnableAspectJAutoProxy、WEB@EnableWebMvc、
+                 JPA@EnableJpaRepositories、事务@EnableTransactionManagement、缓存@EnableCaching/@EnableRedisRepository、
+                 配置@EnableConfigServer、
+    6)spring mvc:类@RestController、方法@GetMapping/@PostMapping.../@RequestMapping(path,params,headers,consumes,produces)、
+                 入参@RequestParam/@RequestBody/@PathVariable/InitBinder/@ModeAttribute、出参@ResponseBody/@ResponseStatus/@ResponseHeaders
+                 异常处理：@ControllerAdvice/@ExceptionHandler
+    7)JPA:@NoRepositoryBean/@Procedure/@Query/@Modifying/@Transactional
+
+注：@RequestMapping 默认映射所有的Http Action**，可以使用@RequestMapping(method=ActionType)来缩小映射范围；
+    @RequestBody 可以将HttpRequest body 中的json数据反序列化成Java类型
+    @ResponseBody 注解的作用是Controller方法的返回对象通过适当的转换器转换为指定的格式后，写会到HttpResponse的body中
+
+    @Component与@Bean的区别：
+       (1):作用对象不同。@Component作用于类，@Bean作用于方法；
+       (2):@Component通常是通过类路径扫描来自动侦测以及自动装配到spring容器中(可以使用@ComponentScan定义要扫描的路径,从中找出标识了需要装配的类)；
+       (3):@Bean比@Component注解的自定义性更强，而且很多地方只能通过@Bean注解来注册Bean。比如当需要引入第三方中的类装配到spring容器中时；
+       (4):@Controller、@Service、@Repository、@Configuration本质都是@Component注解，只是取了个别名而已
+    @Transactional:
+        (1):在@Transactional注解中如果不配置rollbackFor属性，那么事务只会在遇到RuntimeException的时候才会回滚。
+        (2):@Transactional失效的场景：
+            a.@Transactional应用在非public修饰的方法上；（虽然@Transactional使用在非public方法上事务无效，但是不会报错）
+            b.@Transactional注解属性propagation设置错误；设置如下三种失效：
+                --TransactionDefinition.PROPAGATION_SUPPORTS:如果当前存在事务则加入事务，如果不存在事务，则以非事务方式运行；
+                --TransactionDefinition.PROPAGATION_NOT_SUPPORTS:以非事务方式运行，如果当前存在事务则把当前事务挂起；
+                --TransactionDefinition.PROPAGATION_NEVER:以非事务方式运行，如果当前存在事务，则抛出异常
+            c.@Transactional属性rollbackFor设置错误，spring默认抛出了RuntimeException或者Error才会回滚
+            d.同一个类中方法调用，导致@Transactional失效。（只有当事务方法被当前类以外的的代码调用时，才会由spring生成的代理对象来管理）
+            e.异常被捕获了
+            f.数据库引擎不支持事务
+
+@Import/@ImportResource:
+    这两个注解可以将一些bean加载到spring容器中来，很多其他的注解例如@EnableAutoConfiguration、@EnableScheduling等都用到了这个注解。
+    (1):直接在@Import注解的value参数中填写需要加载进来的实例类（如：@Import(value=A.class)/@Import(A.class)/@Import({A.class,B.class,C.class})）
+    (2):在@Import中填写一个自定义的ImportSelector类，然后在selectImports方法中返回所有需要加载的类的全限定名即可
+    (3):在@Import中填写一个自定义的ImportBeanDefinitionRegistrar类，然后在registerBeanDefinitions注册需要加载的bean。
+
+@Autowired:
+    (1):通过AutowiredAnnotationBeanPostProcessor实现的依赖注入
+    (2):可以作用在构造函数、方法、实例字段、注解类型上
+    (3):默认是根据类型装配的
+    (4):如果有多个类型一样的候选bean，需要制定按照名称进行装配，需要配合@Qualifier
+ 如果制定名称后，spring容器中没有对应的bean，则抛出NoSuchBeanDefinitionException，也可以将@Autowire中的required配置为false
+
+@JsonIgnoreProperties  作用在类上用于过滤掉特定字段不返回或者不解析，@JsonIgnore作用在字段上
+
+重要的注解：
+    @ComponentScan、@Bean、@Configuration、@Component/@Controller/@Service/@Repository、@Conditional、@Lazy、@Scope、@Import、@Value
+    @Autowired/@Inject/@Resource、@Profile
+
+过滤器和拦截器的比较：
+    (1):Filter需要在web.xml中配置，依赖于Servlet
+    (2):Interceptor主要在springmvc配置文件中配置，依赖于框架
+    (3):Filter的执行顺序在Interceptor之前
+    (4):Interceptor是基于反射机制，Filter是基于函数回调
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
