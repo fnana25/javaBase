@@ -12,10 +12,16 @@
     <modules>
         <module>data</module>
         <module>grammar</module>
+        <module>guava</module>
     </modules>
 
     <dependencies>
-
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.7.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
